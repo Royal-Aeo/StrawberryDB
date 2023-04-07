@@ -1,5 +1,8 @@
 from exception import db_read_error
+#from Objects import 
 
+
+numli = ["1","2","3","4","5","6","7","8","9","0"]
 
 def _clean(raw:str):
     raw = raw.replace("\n","")
@@ -49,7 +52,31 @@ def get_sc_dic(char:str,sep=":",fkey=False):
         maindict.update({e1:e2})
     return maindict
 
-#def get_fruit_dic(char:str,sch_dic:dict):
+def get_fruit_dic(char:str):
+    maindic = dict()
+    key = char[:3]
+    char = char[4:]
+    char = char.replace("{","")
+    char = char.replace(f"${key[2]}>","")
+    char = char.replace("}","")
+    char = char.replace(f"<${key[2]}","")
+    char = char.split(",")
+    for i in char:
+        w = i.split(":")
+        if w[1][-1] == '"' and w[1][0] == '"':
+            w[1] = w[1].replace('"',"")
+        else:
+            if "." in w[1]:
+                w[1] = float(w[1])
+            elif w[1] == "True" or w[1] == "False":
+                w[1] = bool(w[1])
+            elif w[1][0] in numli:
+                w[1] = int(w[1])
+            else:
+                raise db_read_error.DataisNotinSchm
+        maindic.update({w[0]:w[1]})
+    return {key: maindic}
+
 
 
 def giv_raw(fp):
@@ -108,16 +135,14 @@ def read_berrybase(fp):
         raise db_read_error.nohull
     else:
         data = data[11:]
-        data = (tag_spill(data,"{infu>","<infu"))[1]
+        data = (tag_spill(data,"{infu>","<infu}"))[1]
         data = data.split(";")
-        #print(get_dic(data[0]))
-        #print(get_dic(data[0]))
+        dict1 = dict()
+        for i in data:
+            dict1.update(get_fruit_dic(i))
+        print(dict1)
         pass
 
-    
 
-        
 
-    
-
-read_berrybase(".\\pysourcecode\\text.berrybase")
+read_berrybase(".\\text.berrybase")

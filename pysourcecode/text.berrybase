@@ -1,9 +1,8 @@
 {main>
     $hull: {hulltag>
-        primary_key: "id",
-        foreign_keys: [None],
-        slices: {"id":int|"col":char|"col1":bool|"col2":decimal},
-        row: int
+        primary_key: id,
+        foreign_key: {col:"new.berrybase"}
+        slices: {"id":int|"col":char|"col1":bool|"col2":decimal}
     <hulltag};~
     $mainfruit: {infu>
         *&1: {$1>

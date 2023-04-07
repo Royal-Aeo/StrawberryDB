@@ -1,9 +1,13 @@
 class db_read_error(Exception):
-    def __init__(self, msg) -> None:
+    def __init__(self, msg):
         self.msg = msg
         super().__init__(self.msg)
     class nohull(Exception):
         def __init__(self,msg="hull is not in the database.") -> None:
+            self.msg = msg
+            super().__init__(self.msg)
+    class noMainFruit(Exception):
+        def __init__(self,msg):
             self.msg = msg
             super().__init__(self.msg)
     class notag(Exception):

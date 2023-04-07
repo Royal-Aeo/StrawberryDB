@@ -15,9 +15,9 @@ def prim_for_key(char:str,sep=":"):
     elif e1 == 'primary_key' and e2 == "[None]":
         maindict.update({"PRIMARY_KEY":None})
     if e1 == "foreign_key" and e2 != "[None]":
-        e2 = e2.replace("{","")
-        e2 = e2.replace("}","")
-        maindict.update({"FOREIGN_KEY":get_dic(e2,":",fkey=True)})
+        e2 = e2.replace("[","")
+        e2 = e2.replace("]","")
+        maindict.update({"FOREIGN_KEY":e2.split(";")})
     elif e1 == "foreign_key" and e2 == "[None]":
         maindict.update({"FOREIGN_KEY":e2})
     return maindict
@@ -30,7 +30,7 @@ def tag_spill(char:str,tag1,tag2):
     e2,e3 = char.split(tag2)
     return [e1,e2,e3]
 
-def get_dic(char:str,sep=":",fkey=False):
+def get_sc_dic(char:str,sep=":",fkey=False):
     "please use | as a sep if processing an array."
     maindict = dict()
     e1, e2 = char.split(sep,maxsplit=1)
@@ -48,6 +48,9 @@ def get_dic(char:str,sep=":",fkey=False):
     elif fkey == True:
         maindict.update({e1:e2})
     return maindict
+
+#def get_fruit_dic(char:str,sch_dic:dict):
+
 
 def giv_raw(fp):
     with open(fp,"r") as file:
@@ -71,7 +74,7 @@ def read_berrybase(fp):
         l = dict()
         dic_st = str()
         for i in schema:
-            if "{" in i or "}" in i:
+            if (("{" in i) or ("}" in i)) and (i[0:11] != 'foreign_key'):
                 dic_st = i
                 continue
             if i[0:11] == "primary_key":
@@ -80,29 +83,35 @@ def read_berrybase(fp):
             if i[0:11] == "foreign_key":
                 l.update({"FOREIGN_KEY":(prim_for_key(i))['FOREIGN_KEY']})
                 continue
-            l.update(get_dic(i))
+            l.update(get_sc_dic(i))
 
         maindict = dict()
         if dic_st[0:7] == "slices:":
             sep = "|"
+            #print(dic_st)
             dic_st = dic_st[7:]
+            #print(dic_st)
             dic_st = dic_st.replace("{","")
             dic_st = dic_st.replace("}","")
             li = dic_st.split(sep)
             maindict.update({"slices":dict()})
             for i in li:
-                maindict['slices'].update(get_dic(i,sep=":"))
+                maindict['slices'].update(get_sc_dic(i))
             l.update(maindict)
     # var "l" is the output var of the above code.
     # process data
     raw = giv_raw(fp)
     raw = (tag_spill(raw,"{main>","<main}"))[1]
     parts = raw.split(";~")
-    schema = parts[1]
-    if schema[0:11] != "$mainfruit:":
+    data = parts[1]
+    if data[0:11] != "$mainfruit:":
         raise db_read_error.nohull
     else:
-        print(l,type(l))
+        data = data[11:]
+        data = (tag_spill(data,"{infu>","<infu"))[1]
+        data = data.split(";")
+        #print(get_dic(data[0]))
+        #print(get_dic(data[0]))
         pass
 
     

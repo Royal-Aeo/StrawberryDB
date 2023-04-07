@@ -1,0 +1,7 @@
+data_types = 
+char
+int
+bool
+None
+decimal
+array

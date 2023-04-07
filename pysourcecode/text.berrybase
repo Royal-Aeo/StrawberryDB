@@ -1,0 +1,15 @@
+{main>
+    $hull: {hulltag>
+        primary_key: "id",
+        foreign_keys: [None],
+        slices: {"id":int|"col":char|"col1":bool|"col2":decimal},
+        row: int
+    <hulltag};~
+    $mainfruit: {infu>
+        *&1: {$1>
+            "col": "Amrut",
+            "col1": True,
+            "col2": decima,
+        <$1}
+    <infu}
+<main}

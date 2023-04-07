@@ -1,0 +1,4 @@
+||||||||||||||||| StrawberryDB |||||||||||||||||
+
+> This is a non-relational database but yeah could be relational sometimes.
+> 

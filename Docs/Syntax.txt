@@ -1,15 +1,21 @@
-in berrybase:
-{
-    $hull: {
-        primary_key: "";
-        foreigh_keys: [];
-        slices: {"col1":data_type,'col2':data_type};
-        row: int
-    };
-    $mainfruit: {
-        *&<key1(prim_key)>: {
-            <col>: data;
-            <col>: data
-        }
-    }
-}
+{main>
+    $hull: {hulltag>
+        primary_key: id,
+        foreign_key: [col;"new.berrybase"],
+        slices: {"id":int|"col":char|"col1":bool|"col2":decimal}
+    <hulltag};~
+    $mainfruit: {infu>
+        *&1: {$1>
+            id: 1,
+            col: "Amrut",
+            cso: True,
+            cos: 4.5
+        <$1};
+        *&2: {$2>
+            id: 2,
+            col: "Super",
+            cso: True,
+            cos: 00.1
+            <$2}
+    <infu}
+<main}

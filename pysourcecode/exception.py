@@ -7,7 +7,7 @@ class db_read_error(Exception):
             self.msg = msg
             super().__init__(self.msg)
     class noMainFruit(Exception):
-        def __init__(self,msg):
+        def __init__(self,msg="MainFruit is not in the database."):
             self.msg = msg
             super().__init__(self.msg)
     class notag(Exception):

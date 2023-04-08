@@ -1,7 +1,7 @@
 from exception import db_read_error
 from Objects import StrawBerry
 
-
+'''
 numli = ["1","2","3","4","5","6","7","8","9","0"]
 
 def _clean(raw:str):
@@ -121,21 +121,37 @@ class slices:
                 self.vals.append(data)
 
 class StrawBerry:
-    def __init__(self,data:dict,schema:dict):
+    def __init__(self,have_data=True,data:dict=None,schema:dict=None,fp=None):
+      if have_data == True:
         self.PRIMARY_KEY = schema['PRIMARY_KEY']
         self.FOREIGN_KEY = schema['FOREIGN_KEY']
-        self.schrows = []
-        self.row = []
+        self.schpunnet = []
+        self.punnet = []
         for i in (schema['slices']).keys():
             if i == self.PRIMARY_KEY:
-                self.schrows.append(slices.primary_keys(i,datatype=schema['slices'][i]))
+                self.schpunnet.append(slices.primary_keys(i,datatype=schema['slices'][i]))
             if i in schema['slices']:
-                self.schrows.append(slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i]))
+                self.schpunnet.append(slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i]))
             else:
-                self.schrows.append(slices.column(i,datatype=schema['slice'][i]))
+                self.schpunnet.append(slices.column(i,datatype=schema['slice'][i]))
         self.add_row(data)
+      else:
+        data = self.read_berrybase(fp)
+        schema = data['hull']
+        self.PRIMARY_KEY = schema['PRIMARY_KEY']
+        self.FOREIGN_KEY = schema['FOREIGN_KEY']
+        self.schpunnet = []
+        self.punnet = []
+        for i in (schema['slices']).keys():
+            if i == self.PRIMARY_KEY:
+                self.schpunnet.append(slices.primary_keys(i,datatype=schema['slices'][i]))
+            if i in schema['slices']:
+                self.schpunnet.append(slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i]))
+            else:
+                self.schpunnet.append(slices.column(i,datatype=schema['slice'][i]))
+        self.add_row(data['mainfruit'])
 
-    def read_berrybase(fp):
+    def read_berrybase(self,fp):
         #opening file
         #process schema
         raw = giv_raw(fp)
@@ -191,30 +207,36 @@ class StrawBerry:
             for i in data:
                 dict1.update(get_fruit_dic(i))
             return {"hull":l,"mainfruit":dict1}
-
-        def add_row(self,data:dict):
-            for i in data:
-                for e in self.rows:
-                    if e == self.PRIMARY_KEY:
-                        for o in self.rows:
-                            if o.head == e:
-                                o.add(i[e])
-                                break
-                    elif e == self.FOREIGN_KEY:
-                        for o in self.rows:
-                            if o.head == e:
-                                o.add(i[e])
-                                break
-                    else:
-                        for o in self.rows:
-                            if o.head == e:
-                                o.add(i[e])
-        def add_slice(self,head,datatype=str):
-            self.rows.append(slices.column(head,datatype=datatype))
+    def add_row(self,data:dict):
+        for i in data:
+            for e in self.punnet:
+                if e == self.PRIMARY_KEY:
+                    for o in self.punnet:
+                        if o.head == e:
+                            o.add(i[e])
+                            break
+                elif e == self.FOREIGN_KEY:
+                    print(e,self.FOREIGN_KEY)
+                    for o in self.punnet:
+                        if o.head == e:
+                            o.add(i[e])
+                            break
+                else:
+                    for o in self.punnet:
+                        if o.head == e:
+                            o.add(i[e])
+    def add_slice(self,head,datatype=str):
+        self.punnet.append(slices.column(head,datatype=datatype))
+'''
         
 
             
+ins = StrawBerry(have_data=False,fp=".\\pysourcecode\\text.berrybase")
 
+print(ins.PRIMARY_KEY)
+print(ins.FOREIGN_KEY)
+print(ins.punnet)
+print(ins.schpunnet)
 
 
 

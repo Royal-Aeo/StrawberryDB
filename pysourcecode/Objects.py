@@ -1,5 +1,88 @@
-from exception import  db_update_error
+from exception import db_update_error,db_read_error
 
+# Global Variables
+numli = ["1","2","3","4","5","6","7","8","9","0"]
+
+# All independent functions
+def _clean(raw:str):
+    raw = raw.replace("\n","")
+    raw = raw.replace(" ","")
+    return raw
+
+def prim_for_key(char:str,sep=":"):
+    maindict = dict()
+    e1, e2 = char.split(sep,maxsplit=1)
+    e1 = e1.replace('"',"")
+    if e1 == 'primary_key' and e2 != "[None]":
+        maindict.update({"PRIMARY_KEY":e2})
+    elif e1 == 'primary_key' and e2 == "[None]":
+        maindict.update({"PRIMARY_KEY":None})
+    if e1 == "foreign_key" and e2 != "[None]":
+        e2 = e2.replace("[","")
+        e2 = e2.replace("]","")
+        maindict.update({"FOREIGN_KEY":e2.split(";")})
+    elif e1 == "foreign_key" and e2 == "[None]":
+        maindict.update({"FOREIGN_KEY":e2})
+    return maindict
+    
+def tag_spill(char:str,tag1,tag2):
+    if (tag1 not in char) or (tag2 not in char):
+        db_read_error.notag(f"{tag1} or {tag2} is not in database.")
+    e1,char = char.split(tag1)
+    e2,e3 = char.split(tag2)
+    return [e1,e2,e3]
+
+def get_sc_dic(char:str,sep=":",fkey=False):
+    "please use | as a sep if processing an array."
+    maindict = dict()
+    e1, e2 = char.split(sep,maxsplit=1)
+    e1 = e1.replace('"',"")
+    if e2 == "char":
+        maindict.update({e1:str})
+    elif e2 == "int":
+        maindict.update({e1:int})
+    elif e2 == "bool":
+        maindict.update({e1:bool})
+    elif e2 == 'None' or e2 == "[None]":
+        maindict.update({e1:None})
+    elif e2 == "decimal":
+        maindict.update({e1:float})
+    elif fkey == True:
+        maindict.update({e1:e2})
+    return maindict
+
+def get_fruit_dic(char:str):
+    maindic = dict()
+    key = char[:3]
+    char = char[4:]
+    char = char.replace("{","")
+    char = char.replace(f"${key[2]}>","")
+    char = char.replace("}","")
+    char = char.replace(f"<${key[2]}","")
+    char = char.split(",")
+    for i in char:
+        w = i.split(":")
+        if w[1][-1] == '"' and w[1][0] == '"':
+            w[1] = w[1].replace('"',"")
+        else:
+            if "." in w[1]:
+                w[1] = float(w[1])
+            elif w[1] == "True" or w[1] == "False":
+                w[1] = bool(w[1])
+            elif w[1][0] in numli:
+                w[1] = int(w[1])
+            else:
+                raise db_read_error.DataisNotinSchm
+        maindic.update({w[0]:w[1]})
+    return {key: maindic}
+
+def giv_raw(fp):
+    with open(fp,"r") as file:
+        raw = file.read()
+    raw = _clean(raw)
+    return raw
+
+# Classes
 class slices:
     class primary_keys:
         def __init__(self,head,lis=[],datatype=str) -> None:
@@ -34,24 +117,60 @@ class slices:
                 self.vals.append(data)
 
 class StrawBerry:
-    def __init__(self,data:dict,schema:dict):
+    def __init__(self,have_data=True,data:dict=None,schema:dict=None,fp=None):
+      if have_data == True:
         self.PRIMARY_KEY = schema['PRIMARY_KEY']
         self.FOREIGN_KEY = schema['FOREIGN_KEY']
-        self.schrows = []
-        self.row = []
+        self.schpunnet = {}
+        self.punnet = {}
         for i in (schema['slices']).keys():
             if i == self.PRIMARY_KEY:
-                self.schrows.append(slices.primary_keys(i,datatype=schema['slices'][i]))
-            if i in schema['slices']:
-                self.schrows.append(slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i]))
+                self.schpunnet.update({"PRIMARY_KEY":slices.primary_keys(i,datatype=schema['slices'][i])})
+                continue
+            elif i == self.FOREIGN_KEY:
+                self.schpunnet.update({"FOREIGN_KEY":slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i])})
+                continue
             else:
-                self.schrows.append(slices.column(i,datatype=schema['slice'][i]))
+                self.schpunnet.update({i:slices.column(i,datatype=schema['slice'][i])})
         self.add_row(data)
+      else:
+        data = self.read_berrybase(fp)
+        schema = data['hull']
+        self.PRIMARY_KEY = schema['PRIMARY_KEY']
+        self.FOREIGN_KEY = schema['FOREIGN_KEY']
+        self.schpunnet = {}
+        self.punnet = []
+        for i in (schema['slices']).keys():
+            if i == self.PRIMARY_KEY:
+                self.schpunnet.update({"PRIMARY_KEY":slices.primary_keys(i,datatype=schema['slices'][i])})
+                continue
+            if i == self.FOREIGN_KEY[0]:
+                self.schpunnet.update({"FOREIGN_KEY":slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i])})
+                continue
+            else:
+                self.schpunnet.update({i:slices.column(i,datatype=schema['slices'][i])})
 
-        def add_slice(self,head,datatype=str):
-            self.rows.append(slices.column(head,datatype=datatype))
-'''
-        def read_berrybase(fp):
+        self.init_punnet()
+        for i in data['mainfruit']:
+            self.add_row(data["mainfruit"][i])
+
+    def add_slice(self,head,datatype=str):
+        self.punnet.append(slices.column(head,datatype=datatype))
+    
+    def add_row(self,data:dict):
+        for i in data:
+            if i == self.PRIMARY_KEY:
+                self.punnet['PRIMARY_KEY'].add(data[i])
+            elif i == self.FOREIGN_KEY[0]:
+                self.punnet['FOREIGN_KEY'].add(data[i])
+            else:
+                print(self.punnet,i)
+                self.punnet[i].add(data[i])
+
+    def init_punnet(self):
+        self.punnet = self.schpunnet
+
+    def read_berrybase(self,fp):
         #opening file
         #process schema
         raw = giv_raw(fp)
@@ -98,34 +217,22 @@ class StrawBerry:
         parts = raw.split(";~")
         data = parts[1]
         if data[0:11] != "$mainfruit:":
-            raise db_read_error.nohull
+            raise db_read_error.noMainFruit
         else:
             data = data[11:]
             data = (tag_spill(data,"{infu>","<infu}"))[1]
             data = data.split(";")
             dict1 = dict()
             for i in data:
-            dict1.update(get_fruit_dic(i))
+                dict1.update(get_fruit_dic(i))
             return {"hull":l,"mainfruit":dict1}
 
-        def add_row(self,data:dict):
-            for i in data:
-                for e in self.rows:
-                    if e == self.PRIMARY_KEY:
-                        for o in self.rows:
-                            if o.head == e:
-                                o.add(i[e])
-                                break
-                    elif e == self.FOREIGN_KEY:
-                        for o in self.rows:
-                            if o.head == e:
-                                o.add(i[e])
-                                break
-                    else:
-                        for o in self.rows:
-                            if o.head == e:
-                                o.add(i[e])
-'''
+
+    def insert(self,data:dict):
+        "!construction!"
+        for i in data:
+            if i == self.PRIMARY_KEY:
+                self.punnet[self.punnet.index()]
         
 
             

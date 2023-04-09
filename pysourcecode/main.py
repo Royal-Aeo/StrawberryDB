@@ -232,14 +232,11 @@ class StrawBerry:
 
             
 ins = StrawBerry(have_data=False,fp=".\\pysourcecode\\text.berrybase")
-
-print(ins.PRIMARY_KEY)
-print(ins.FOREIGN_KEY)
-print(ins.punnet)
-print(ins.schpunnet)
+print(ins.show())
 
 
 
 
 
-#print(read_berrybase(".\\pysourcecode\\text.berrybase"))
+
+#print(read_berrybase("text.berrybase"))

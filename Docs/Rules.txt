@@ -4,4 +4,3 @@ int
 bool
 None
 decimal
-array

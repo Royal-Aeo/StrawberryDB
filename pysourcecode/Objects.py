@@ -1,3 +1,5 @@
+from copy import copy
+import prettytable
 from exception import db_update_error,db_read_error
 
 # Global Variables
@@ -8,6 +10,21 @@ def _clean(raw:str):
     raw = raw.replace("\n","")
     raw = raw.replace(" ","")
     return raw
+
+def charty(char):
+    typ = None
+    try:
+        int(char)
+        typ = int
+    except:
+        if char == "True" or char == "False":
+            typ = bool
+        elif len(char.split(".")) == 2:
+            typ = float
+        else:
+            typ = str
+    return typ
+
 
 def prim_for_key(char:str,sep=":"):
     maindict = dict()
@@ -24,7 +41,7 @@ def prim_for_key(char:str,sep=":"):
     elif e1 == "foreign_key" and e2 == "[None]":
         maindict.update({"FOREIGN_KEY":e2})
     return maindict
-    
+
 def tag_spill(char:str,tag1,tag2):
     if (tag1 not in char) or (tag2 not in char):
         db_read_error.notag(f"{tag1} or {tag2} is not in database.")
@@ -65,12 +82,14 @@ def get_fruit_dic(char:str):
         if w[1][-1] == '"' and w[1][0] == '"':
             w[1] = w[1].replace('"',"")
         else:
-            if "." in w[1]:
+            if charty(w[1]) == float:
                 w[1] = float(w[1])
-            elif w[1] == "True" or w[1] == "False":
+            elif charty(w[1]) == bool:
                 w[1] = bool(w[1])
-            elif w[1][0] in numli:
+            elif charty(w[1]) == int:
                 w[1] = int(w[1])
+            elif charty(w[1]) == str:
+                pass
             else:
                 raise db_read_error.DataisNotinSchm
         maindic.update({w[0]:w[1]})
@@ -87,7 +106,7 @@ class slices:
     class primary_keys:
         def __init__(self,head,lis=[],datatype=str) -> None:
             self.head = head
-            self.vals = lis
+            self.vals = copy(lis)
             self.datatype = datatype
         def add(self,data):
             if type(data) != self.datatype:
@@ -95,9 +114,9 @@ class slices:
             else:
                 self.vals.append(data)
     class foreign_keys:
-        def __init__(self,head,lis=[],reference_table_name=None,datatype=str) -> None:
+        def __init__(self,head,lis:list=[],reference_table_name=None,datatype=str) -> None:
             self.head = head
-            self.vals = lis
+            self.vals = copy(lis)
             self.datatype = datatype
             self.reference = reference_table_name
         def add(self,data):
@@ -105,16 +124,39 @@ class slices:
                 raise db_update_error.column_datatype_err()
             else:
                 self.vals.append(data)
-    class column:
-        def __init__(self,head,lis=[],datatype=str) -> None:
-            self.vals = lis
-            self.datatype = datatype
+    class columnint:
+        def __init__(self,head,list=[]):
             self.head = head
+            self.vals = copy(list)
+            self.datatype = int
         def add(self,data):
-            if type(data) != self.datatype:
-                raise db_update_error.column_datatype_err()
-            else:
-                self.vals.append(data)
+            self.vals.append(data)
+    class columnbool:
+        def __init__(self,head,list=[]):
+            self.head = head
+            self.vals = copy(list)
+            self.datatype = bool
+        def add(self,data):
+            self.vals.append(data)
+    class columnstr:
+        def __init__(self,head,list=[]):
+            self.head = head
+            self.vals = copy(list)
+            self.datatype = str
+        def add(self,data):
+            self.vals.append(data)
+    class columnflo:
+        def __init__(self,head,list=[]):
+            self.head = head
+            self.vals = copy(list)
+            self.datatype = float
+        def add(self,data):
+            self.vals.append(data)
+
+
+def newcol(cla,head):
+    l = copy(cla(head))
+    return l
 
 class StrawBerry:
     def __init__(self,have_data=True,data:dict=None,schema:dict=None,fp=None):
@@ -125,14 +167,21 @@ class StrawBerry:
         self.punnet = {}
         for i in (schema['slices']).keys():
             if i == self.PRIMARY_KEY:
-                self.schpunnet.update({"PRIMARY_KEY":slices.primary_keys(i,datatype=schema['slices'][i])})
-                continue
+                self.schpunnet.update({i:slices.primary_keys(i,datatype=schema['slices'][i])})
             elif i == self.FOREIGN_KEY:
-                self.schpunnet.update({"FOREIGN_KEY":slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i])})
-                continue
-            else:
-                self.schpunnet.update({i:slices.column(i,datatype=schema['slice'][i])})
-        self.add_row(data)
+                self.schpunnet.update({i:slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i])})
+            elif schema['slices'][i] == bool:
+                ins = slices.columnbool(i)
+                self.schpunnet.update({i:ins})
+            elif schema['slices'][i] == int:
+                ins = slices.columnint(i)
+                self.schpunnet.update({i:ins})
+            elif schema['slices'][i] == float:
+                ins = slices.columnflo(i)
+                self.schpunnet.update({i:ins})
+            elif schema['slices'][i] == str:
+                ins = slices.columnstr(i)
+                self.schpunnet.update({i:ins})
       else:
         data = self.read_berrybase(fp)
         schema = data['hull']
@@ -142,13 +191,17 @@ class StrawBerry:
         self.punnet = []
         for i in (schema['slices']).keys():
             if i == self.PRIMARY_KEY:
-                self.schpunnet.update({"PRIMARY_KEY":slices.primary_keys(i,datatype=schema['slices'][i])})
-                continue
-            if i == self.FOREIGN_KEY[0]:
-                self.schpunnet.update({"FOREIGN_KEY":slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i])})
-                continue
-            else:
-                self.schpunnet.update({i:slices.column(i,datatype=schema['slices'][i])})
+                self.schpunnet.update({i:slices.primary_keys(i,datatype=schema['slices'][i])})
+            elif i == self.FOREIGN_KEY[0]:
+                self.schpunnet.update({i:slices.foreign_keys(i,reference_table_name=[1],datatype=schema['slices'][i])})
+            elif schema['slices'][i] == bool:
+                self.schpunnet.update({i:slices.columnbool(i)})
+            elif schema['slices'][i] == int:
+                self.schpunnet.update({i:slices.columnint(i)})
+            elif schema['slices'][i] == float:
+                self.schpunnet.update({i:slices.columnflo(i)})
+            elif schema['slices'][i] == str:                                        #
+                self.schpunnet.update({i:slices.columnstr(i)})
 
         self.init_punnet()
         for i in data['mainfruit']:
@@ -160,12 +213,17 @@ class StrawBerry:
     def add_row(self,data:dict):
         for i in data:
             if i == self.PRIMARY_KEY:
-                self.punnet['PRIMARY_KEY'].add(data[i])
+                self.punnet[i].vals.append(data[i])
             elif i == self.FOREIGN_KEY[0]:
-                self.punnet['FOREIGN_KEY'].add(data[i])
-            else:
-                print(self.punnet,i)
-                self.punnet[i].add(data[i])
+                self.punnet[i].vals.append(data[i])
+            elif type(data[i]) == bool:
+                self.punnet[i].vals.append(data[i])
+            elif type(data[i]) == int:
+                self.punnet[i].vals.append(data[i])
+            elif type(data[i]) == float:
+                self.punnet[i].vals.append(data[i])
+            elif type(data[i]) == str:
+                self.punnet[i].vals.append(data[i])
 
     def init_punnet(self):
         self.punnet = self.schpunnet
@@ -226,6 +284,19 @@ class StrawBerry:
             for i in data:
                 dict1.update(get_fruit_dic(i))
             return {"hull":l,"mainfruit":dict1}
+
+    def show(self):
+        head = [i for i in self.punnet]
+        l = []
+        for i in range(len(self.punnet[self.PRIMARY_KEY].vals)):
+            li = []
+            for e in self.punnet:
+                li.append(self.punnet[e].vals[i])
+            l.append(li)
+        table = prettytable.PrettyTable(head)
+        table.add_rows(l)
+        return table
+
 
 
     def insert(self,data:dict):

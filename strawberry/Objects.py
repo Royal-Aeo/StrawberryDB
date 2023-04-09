@@ -27,15 +27,17 @@ def prim_for_key(char:str,sep=":"):
     e1, e2 = char.split(sep,maxsplit=1)
     e1 = e1.replace('"',"")
     if e1 == 'primary_key' and e2 != "[None]":
-        maindict.update({"PRIMARY_KEY":e2})
+        maindict.update({"primary_key":e2})
     elif e1 == 'primary_key' and e2 == "[None]":
-        maindict.update({"PRIMARY_KEY":None})
-    if e1 == "foreign_key" and e2 != "[None]":
+        maindict.update({"primary_key":None})
+    elif e1 == "foreign_key" and e2 != "[None]":
         e2 = e2.replace("[","")
         e2 = e2.replace("]","")
-        maindict.update({"FOREIGN_KEY":e2.split(";")})
+        maindict.update({"foreign_key":e2.split(";")})
     elif e1 == "foreign_key" and e2 == "[None]":
-        maindict.update({"FOREIGN_KEY":e2})
+        maindict.update({"foreign_key":e2})
+    else:
+        raise db_read_error.MissingPrimOrForkeys
     return maindict
 
 def tag_spill(char:str,tag1,tag2):
@@ -190,8 +192,8 @@ class StrawBerry:
       else:
         data = self.read_berrybase(fp)
         schema = data['hull']
-        self.PRIMARY_KEY = schema['PRIMARY_KEY']
-        self.FOREIGN_KEY = schema['FOREIGN_KEY']
+        self.PRIMARY_KEY = schema["primary_key"]
+        self.FOREIGN_KEY = schema["foreign_key"]
         self.schpunnet = {}
         self.punnet = {}
         for i in (schema['slices']).keys():
@@ -253,10 +255,10 @@ class StrawBerry:
                     dic_st = i
                     continue
                 if i[0:11] == "primary_key":
-                    l.update({"PRIMARY_KEY":(prim_for_key(i)['PRIMARY_KEY'])})
+                    l.update({"primary_key":(prim_for_key(i)['primary_key'])})
                     continue
                 elif i[0:11] == "foreign_key":
-                    l.update({"FOREIGN_KEY":(prim_for_key(i))['FOREIGN_KEY']})
+                    l.update({"foreign_key":(prim_for_key(i))['foreign_key']})
                     continue
                 else:
                     db_read_error.MissingPrimOrForkeys
@@ -289,7 +291,7 @@ class StrawBerry:
             data = data.split(";")
             dict1 = dict()
             for i in data:
-                dict1.update(get_fruit_dic(i))
+                dict1.update(get_fruit_dic(i))                                         #
             return {"hull":l,"mainfruit":dict1}
 
     def show(self):
@@ -307,8 +309,37 @@ class StrawBerry:
     def insert(self,data:dict):
         for i in data:
             self.add_row(data[i])
-        
 
+    def seal(self,indent=4):
+        mainstr = str()
+        slic = dict()
+        for i in self.schpunnet:
+            slic.update({i:self.schpunnet[i].datatype})
+        schema = {"primary_key":self.PRIMARY_KEY,"foreign_key":self.FOREIGN_KEY,"slices":slic}
+        #for i in self.schpunnet:
+            #schema.update({i:self.schpunnet[i]})
+        l = {}
+        for i in range(len(self.punnet[self.PRIMARY_KEY].vals)):
+            li = {}
+            for e in self.punnet:
+                li.update({e:self.punnet[e].vals[i]})
+            i = f"*&{self.punnet[self.PRIMARY_KEY].vals[i]}"
+            l.update({i:li})
+        mainstr = mainstr.__add__("{main>\n")
+        mainstr = mainstr.__add__((" "*indent).__add__("$hull: {hulltag>\n"))
+        mainstr = mainstr.__add__((" "*indent*2).__add__(f"primary_key: {schema['primary_key']},\n"))
+        mainstr = mainstr.__add__((" "*indent*2).__add__(f"foreign_key: {schema['foreign_key']},\n"))
+        mainstr = mainstr.__add__((" "*indent*2).__add__(f"slices: {schema['slices']},\n"))
+        mainstr = mainstr.__add__((" "*indent).__add__("<hulltag};~\n"))
+        mainstr = mainstr.__add__((" "*indent).__add__("$mainfruit: {infu>\n"))
+        for i in l:
+            mainstr = mainstr.__add__((" "*indent*2).__add__(f"{i}: {{${l[i][self.PRIMARY_KEY]}>\n"))
+            for z in l[i]:
+                mainstr = mainstr.__add__((f" "*indent*3).__add__(f"{z}: {l[i][z]}\n"))
+        mainstr = mainstr.__add__((" "*indent*2).__add__("}\n"))
+        mainstr = mainstr.__add__((" "*indent*1).__add__("<infu}\n"))
+        mainstr = mainstr.__add__("<main}\n")
+        return mainstr
             
 
 

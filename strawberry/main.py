@@ -230,7 +230,8 @@ class StrawBerry:
 '''
 
 ins = StrawBerry(have_data=False,fp="text.berrybase")
-print(ins.show())
+
+print(ins.seal())
 
 
 

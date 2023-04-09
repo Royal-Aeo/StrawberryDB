@@ -1,30 +1,27 @@
 {main>
     $hull: {hulltag>
         primary_key: id,
-        foreign_key: [col;"new.berrybase"],
-        slices: {"id":int|"name":char|"cso":bool|"cos":decimal|"newcol":char}
+        foreign_key: [name;"new.berrybase"],
+        slices: {"id":int|"name":char|"cso":bool|"cos":decimal}
     <hulltag};~
     $mainfruit: {infu>
         *&1: {$1>
             id: 1,
             name: "Amrut",
             cso: True,
-            cos: 4.5,
-            newcol: None
+            cos: 4.5
         <$1};
         *&2: {$2>
             id: 2,
             name: "Super",
             cso: True,
-            cos: 00.1,
-            newcol: None
+            cos: 00.1
             <$2};
         *&3: {$3>
             id: 3,
             name: "Creeper",
             cso: True,
-            cos: 302.2,
-            newcol: None
+            cos: 302.2
         }
     <infu}
 <main}

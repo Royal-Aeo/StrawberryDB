@@ -228,12 +228,9 @@ class StrawBerry:
     def add_slice(self,head,datatype=str):
         self.punnet.append(slices.column(head,datatype=datatype))
 '''
-        
 
-            
-ins = StrawBerry(have_data=False,fp=".\\pysourcecode\\text.berrybase")
+ins = StrawBerry(have_data=False,fp="text.berrybase")
 print(ins.show())
-
 
 
 

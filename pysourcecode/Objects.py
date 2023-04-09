@@ -2,9 +2,6 @@ from copy import copy
 import prettytable
 from exception import db_update_error,db_read_error
 
-# Global Variables
-numli = ["1","2","3","4","5","6","7","8","9","0"]
-
 # All independent functions
 def _clean(raw:str):
     raw = raw.replace("\n","")
@@ -24,7 +21,6 @@ def charty(char):
         else:
             typ = str
     return typ
-
 
 def prim_for_key(char:str,sep=":"):
     maindict = dict()
@@ -104,9 +100,9 @@ def giv_raw(fp):
 # Classes
 class slices:
     class primary_keys:
-        def __init__(self,head,lis=[],datatype=str) -> None:
+        def __init__(self,head,datatype=str) -> None:
             self.head = head
-            self.vals = copy(lis)
+            self.vals = copy(list())
             self.datatype = datatype
         def add(self,data):
             if type(data) != self.datatype:
@@ -114,9 +110,9 @@ class slices:
             else:
                 self.vals.append(data)
     class foreign_keys:
-        def __init__(self,head,lis:list=[],reference_table_name=None,datatype=str) -> None:
+        def __init__(self,head,reference_table_name=None,datatype=str) -> None:
             self.head = head
-            self.vals = copy(lis)
+            self.vals = copy(list())
             self.datatype = datatype
             self.reference = reference_table_name
         def add(self,data):
@@ -125,34 +121,33 @@ class slices:
             else:
                 self.vals.append(data)
     class columnint:
-        def __init__(self,head,list=[]):
+        def __init__(self,head):
             self.head = head
-            self.vals = copy(list)
+            self.vals = copy(list())
             self.datatype = int
         def add(self,data):
             self.vals.append(data)
     class columnbool:
-        def __init__(self,head,list=[]):
+        def __init__(self,head):
             self.head = head
-            self.vals = copy(list)
+            self.vals = copy(list())
             self.datatype = bool
         def add(self,data):
             self.vals.append(data)
     class columnstr:
-        def __init__(self,head,list=[]):
+        def __init__(self,head):
             self.head = head
-            self.vals = copy(list)
+            self.vals = copy(list())
             self.datatype = str
         def add(self,data):
             self.vals.append(data)
     class columnflo:
-        def __init__(self,head,list=[]):
+        def __init__(self,head):
             self.head = head
-            self.vals = copy(list)
+            self.vals = copy(list())
             self.datatype = float
         def add(self,data):
             self.vals.append(data)
-
 
 def newcol(cla,head):
     l = copy(cla(head))
@@ -161,34 +156,44 @@ def newcol(cla,head):
 class StrawBerry:
     def __init__(self,have_data=True,data:dict=None,schema:dict=None,fp=None):
       if have_data == True:
-        self.PRIMARY_KEY = schema['PRIMARY_KEY']
-        self.FOREIGN_KEY = schema['FOREIGN_KEY']
+        try:
+            self.PRIMARY_KEY = schema['primary_key']
+        except:
+            self.PRIMARY_KEY = schema["PRIMARY_KEY"]
+        try:
+            self.FOREIGN_KEY = schema['FOREIGN_KEY']
+            if self.FOREIGN_KEY == '[None]':
+                self.FOREIGN_KEY = None
+        except:
+            self.FOREIGN_KEY = schema["foreign_key"]
+            if self.FOREIGN_KEY == '[None]':
+                self.FOREIGN_KEY = [None]
         self.schpunnet = {}
         self.punnet = {}
         for i in (schema['slices']).keys():
             if i == self.PRIMARY_KEY:
                 self.schpunnet.update({i:slices.primary_keys(i,datatype=schema['slices'][i])})
-            elif i == self.FOREIGN_KEY:
-                self.schpunnet.update({i:slices.foreign_keys(i[0],reference_table_name=[1],datatype=schema['slices'][i])})
+            elif self.FOREIGN_KEY:
+                self.schpunnet.update({i:slices.foreign_keys(i,reference_table_name=[1],datatype=schema['slices'][i])})
             elif schema['slices'][i] == bool:
-                ins = slices.columnbool(i)
-                self.schpunnet.update({i:ins})
+                self.schpunnet.update({i:slices.columnbool(i)})
             elif schema['slices'][i] == int:
-                ins = slices.columnint(i)
-                self.schpunnet.update({i:ins})
+                self.schpunnet.update({i:slices.columnint(i)})
             elif schema['slices'][i] == float:
-                ins = slices.columnflo(i)
-                self.schpunnet.update({i:ins})
+                self.schpunnet.update({i:slices.columnflo(i)})
             elif schema['slices'][i] == str:
-                ins = slices.columnstr(i)
-                self.schpunnet.update({i:ins})
+                self.schpunnet.update({i:slices.columnstr(i)})
+
+        self.init_punnet()
+        for i in data:
+            self.add_row(data[i])
       else:
         data = self.read_berrybase(fp)
         schema = data['hull']
         self.PRIMARY_KEY = schema['PRIMARY_KEY']
         self.FOREIGN_KEY = schema['FOREIGN_KEY']
         self.schpunnet = {}
-        self.punnet = []
+        self.punnet = {}
         for i in (schema['slices']).keys():
             if i == self.PRIMARY_KEY:
                 self.schpunnet.update({i:slices.primary_keys(i,datatype=schema['slices'][i])})
@@ -200,7 +205,7 @@ class StrawBerry:
                 self.schpunnet.update({i:slices.columnint(i)})
             elif schema['slices'][i] == float:
                 self.schpunnet.update({i:slices.columnflo(i)})
-            elif schema['slices'][i] == str:                                        #
+            elif schema['slices'][i] == str:
                 self.schpunnet.update({i:slices.columnstr(i)})
 
         self.init_punnet()
@@ -250,9 +255,11 @@ class StrawBerry:
                 if i[0:11] == "primary_key":
                     l.update({"PRIMARY_KEY":(prim_for_key(i)['PRIMARY_KEY'])})
                     continue
-                if i[0:11] == "foreign_key":
+                elif i[0:11] == "foreign_key":
                     l.update({"FOREIGN_KEY":(prim_for_key(i))['FOREIGN_KEY']})
                     continue
+                else:
+                    db_read_error.MissingPrimOrForkeys
                 l.update(get_sc_dic(i))
 
             maindict = dict()
@@ -297,13 +304,9 @@ class StrawBerry:
         table.add_rows(l)
         return table
 
-
-
     def insert(self,data:dict):
-        "!construction!"
         for i in data:
-            if i == self.PRIMARY_KEY:
-                self.punnet[self.punnet.index()]
+            self.add_row(data[i])
         
 
             

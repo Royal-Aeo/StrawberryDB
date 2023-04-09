@@ -2,6 +2,10 @@ class db_read_error(Exception):
     def __init__(self, msg):
         self.msg = msg
         super().__init__(self.msg)
+    class MissingPrimOrForkeys(Exception):
+        def __init__(self,msg='Primary Key or Foreign key is not in database or not in proper position.'):
+            self.msg = msg
+            super().__init__(self.msg)
     class nohull(Exception):
         def __init__(self,msg="hull is not in the database.") -> None:
             self.msg = msg

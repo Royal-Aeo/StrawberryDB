@@ -26,7 +26,6 @@ strawberry_logo = r"""
                               \___/
 """
 
-
 # All independent functions
 def _clean(raw: str):
     raw = raw.replace("\n", "")
@@ -46,6 +45,29 @@ def charty(char):
         else:
             typ = str
     return typ
+
+def type_dic(sch_sli):
+    d = dict()
+    for i in sch_sli:
+        if sch_sli[i] == str:
+            d.update({'"'.__add__(i.__add__('"')):"char"})
+        elif sch_sli[i] == int:
+            d.update({'"'.__add__(i.__add__('"')):"int"})
+        elif sch_sli[i] == bool:
+            d.update({'"'.__add__(i.__add__('"')):"bool"})
+        elif sch_sli[i] == type(None):
+            d.update({'"'.__add__(i.__add__('"')):"None"})
+        elif sch_sli[i] == float:
+            d.update({'"'.__add__(i.__add__('"')):"decimal"})
+    stri = "{"
+    for i in d:
+        print(i,d[i])
+        if d[i] == d[[i for i in d.keys()][-1]]:
+            stri = stri.__add__(f"{i}:{d[i]}")
+            continue
+        stri = stri.__add__(f"{i}:{d[i]}|")
+    stri = stri.__add__("}")
+    return stri
 
 def find_dataty(char):
     if "'" in char or '"' in char:
@@ -201,7 +223,7 @@ class slices:
             self.datatype = datatype
         def add(self, data):
             if type(data) != self.datatype:
-                raise db_update_error.column_datatype_err()
+                print(db_update_error.column_datatype_err())
             else:
                 self.vals.append(data)
 
@@ -213,7 +235,7 @@ class slices:
             self.reference = reference_table_name
         def add(self, data):
             if type(data) != self.datatype:
-                raise db_update_error.column_datatype_err()
+                print(db_update_error.column_datatype_err())
             else:
                 self.vals.append(data)
 
@@ -312,9 +334,6 @@ class StrawBerry:
             for i in data['mainfruit']:
                 self.add_row(data["mainfruit"][i])
 
-    def add_slice(self, head, datatype=str):
-        self.punnet.append(slices.column(head, datatype=datatype))
-
     def add_row(self, data: dict):
         for i in data:
             if i == self.PRIMARY_KEY:
@@ -330,10 +349,14 @@ class StrawBerry:
             elif type(data[i]) == str:
                 self.punnet[i].vals.append(data[i])
 
+    def update(self,num,row_dic):
+        for i in self.punnet:
+            i.vals[num] = row_dic[i.head]
+
     def init_punnet(self):
         self.punnet = self.schpunnet
 
-    def read_berrybase(self, fp):
+    def read_berrybase(self,fp):
         # opening file
         # process schema
         raw = giv_raw(fp)
@@ -341,7 +364,7 @@ class StrawBerry:
         parts = raw.split(";~")
         schema = parts[0]
         if schema[0:6] != "$hull:":
-            raise db_read_error.nohull
+            print(db_read_error.nohull)
         else:
             schema = schema[6:]
             schema = (tag_spill(schema, "{hulltag>", "<hulltag"))[1]
@@ -359,7 +382,7 @@ class StrawBerry:
                     l.update({"foreign_key": (prim_for_key(i))['foreign_key']})
                     continue
                 else:
-                    db_read_error.MissingPrimOrForkeys
+                    print(db_read_error.MissingPrimOrForkeys)
                 l.update(get_sc_dic(i))
 
             maindict = dict()
@@ -382,7 +405,7 @@ class StrawBerry:
         parts = raw.split(";~")
         data = parts[1]
         if data[0:11] != "$mainfruit:":
-            raise db_read_error.noMainFruit
+            print(db_read_error.noMainFruit)
         else:
             data = data[11:]
             data = (tag_spill(data, "{infu>", "<infu}"))[1]
@@ -395,7 +418,7 @@ class StrawBerry:
     def alter(self, primary_key, col, colval):
         for i in self.punnet[self.PRIMARY_KEY].vals:
             if type(colval) != self.punnet[col].datatype:
-                raise db_update_error.column_datatype_err
+                print(db_update_error.column_datatype_err)
             if i == primary_key:
                 self.punnet[col].vals[(self.punnet[self.PRIMARY_KEY].vals).index(i)] = colval
 
@@ -444,7 +467,6 @@ class StrawBerry:
                         continue
                     li.append(self.punnet[e].vals[i])
                 l.append(li)
-            # print(l)
             table = [head]
             table.append(l)
             return table
@@ -509,7 +531,6 @@ class StrawBerry:
                         continue
                     li.append(self.punnet[e].vals[i])
                 l.append(li)
-            # print(l)
             table = prettytable.PrettyTable(head)
             table.add_rows(l)
             return table
@@ -528,8 +549,7 @@ class StrawBerry:
             return table
 
     def insert(self, data: dict):
-        for i in data:
-            self.add_row(data[i])
+        self.add_row(data)
 
     def seal(self, indent=4):
         mainstr = str()
@@ -549,16 +569,22 @@ class StrawBerry:
         mainstr = mainstr.__add__("{main>\n")
         mainstr = mainstr.__add__((" " * indent).__add__("$hull: {hulltag>\n"))
         mainstr = mainstr.__add__((" " * indent * 2).__add__(f"primary_key: {schema['primary_key']},\n"))
-        mainstr = mainstr.__add__((" " * indent * 2).__add__(f"foreign_key: {schema['foreign_key']},\n"))
-        mainstr = mainstr.__add__((" " * indent * 2).__add__(f"slices: {schema['slices']},\n"))
+        mainstr = mainstr.__add__((" " * indent * 2).__add__(f"foreign_key: [{schema['foreign_key'][0]};{schema['foreign_key'][1]}],\n"))
+        mainstr = mainstr.__add__((" " * indent * 2).__add__(f"slices: {type_dic(schema['slices'])}\n"))
         mainstr = mainstr.__add__((" " * indent).__add__("<hulltag};~\n"))
         mainstr = mainstr.__add__((" " * indent).__add__("$mainfruit: {infu>\n"))
         for i in l:
             mainstr = mainstr.__add__((" " * indent * 2).__add__(f"{i}: {{${l[i][self.PRIMARY_KEY]}>\n"))
             for z in l[i]:
-                mainstr = mainstr.__add__((f" " * indent * 3).__add__(f"{z}: {l[i][z]}\n"))
-            mainstr = mainstr.__add__((" " * indent * 2).__add__(f"<${l[i][self.PRIMARY_KEY]}}}\n"))
-        mainstr = mainstr.__add__((" " * indent * 2).__add__("}\n"))
+                if l[i][z] == l[i][[i for i in (l[i].keys())][-1]]:
+                    mainstr = mainstr.__add__((f" " * indent * 3).__add__(f'{z}: {l[i][z]}\n'))
+                    continue
+                mainstr = mainstr.__add__((f" " * indent * 3).__add__(f'{z}: {l[i][z]},\n'))
+            if l[i] == l[[i for i in (l.keys())][-1]]:
+                mainstr = mainstr.__add__((" " * indent * 2).__add__(f"<${l[i][self.PRIMARY_KEY]}}}\n"))
+                continue
+            mainstr = mainstr.__add__((" " * indent * 2).__add__(f"<${l[i][self.PRIMARY_KEY]}}};\n"))
+        #mainstr = mainstr.__add__((" " * indent * 2).__add__("}\n"))
         mainstr = mainstr.__add__((" " * indent * 1).__add__("<infu}\n"))
         mainstr = mainstr.__add__("<main}\n")
         return mainstr
@@ -577,7 +603,6 @@ def argu(argument):
     for i in arguments:
         if i == "":
             del arguments[arguments.index(i)]
-
     for argu in arguments:
         argus = argu.split(" ")
         if argus[0][0] == "*":
@@ -594,18 +619,35 @@ def argu(argument):
                         open(f".\\{db}.BerryBase\\{name}.berrybase","x")
                         return f"table {name} in database {db} has been successfully created!"
                     else:
-                        syntaxerror.FormatErr("Mention database please: create table <name> in database <dbname>")
+                        print(syntaxerror.FormatErr("Mention database please: create table <name> in database <dbname>"))
                 else:
-                    syntaxerror.FormatErr("Mention database please: create table <name> in database <dbname>")
+                    print(syntaxerror.FormatErr("Mention database please: create table <name> in database <dbname>"))
             else:
-                raise syntaxerror.objectCreationErr(f"Unrecognized object: {argus[1]}")
-        elif argus[0].lower() == "alter":
-            if argus[1].lower() == "database":
-                return f"database {argus[2]} has successfully altered!"
-            elif argus[1].lower() == "table":
-                return f"table {argus[2]} has successfully altered!"
+                print(syntaxerror.objectCreationErr(f"Unrecognized object: {argus[1]}"))
+        elif argus[0].lower() == "insertinto":
+            if argus[1].lower() == "table":
+                name = argus[2]
+                if argus[3].lower() == "in":
+                    if argus[4].lower() == "database":
+                        dbname = argus[5]
+                        cols = str(argus[6])
+                        cols = cols.replace(')',"")
+                        cols = cols.replace("(","")
+                        cols = cols.split(",")
+                        d = dict()
+                        for i in cols:
+                            i = i.split("=")
+                            d.update({i[0]:i[1]})
+                        maind = StrawBerry(have_data=False,fp=f".\\{dbname}.BerryBase\\{name}.berrybase")
+                        maind.insert(d)
+                        maind.seal_deliver(f".\\{dbname}.BerryBase",f"\\{name}.berrybase")
+                        print("given data has successfully inserted!")
+                    else:
+                        print(syntaxerror.FormatErr("format: insertinto table <name> in database <dbname> (col=data,col=data,col=data)"))
+                else:
+                    print(syntaxerror.FormatErr("format: insertinto table <name> in database <dbname> (col=data,col=data,col=data)"))
             else:
-                raise syntaxerror.objectCreationErr(f"Unrecognized object: {argus[1]}")
+                print(syntaxerror.FormatErr("format: insertinto table <name> in database <dbname> (col=data,col=data,col=data)"))
         elif argus[0].lower() == "drop":
             if argus[1].lower() == "database":
                 rmdir(f"{argus[2]}.BerryBase")
@@ -616,11 +658,11 @@ def argu(argument):
                         remove(f".\\{argus[5]}.BerryBase\\{argus[2]}.berrybase")
                         return f"table {argus[2]} has been successfully droped!"
                     else:
-                        raise syntaxerror.FormatErr("format: drop table <name> in database <dbname>")
+                        print(syntaxerror.FormatErr("format: drop table <name> in database <dbname>"))
                 else:
-                    raise syntaxerror.FormatErr("format: drop table <name> in database <dbname>")
+                    print(syntaxerror.FormatErr("format: drop table <name> in database <dbname>"))
             else:
-                raise syntaxerror.objectCreationErr(f"Unrecognized object: {argus[1]}")
+                print(syntaxerror.objectCreationErr(f"Unrecognized object: {argus[1]}"))
         elif argus[0].lower() == "grab":
             if argus[1].lower() == "from":
                 if argus[2].lower() == "table":
@@ -642,22 +684,22 @@ def argu(argument):
                                 col = col.split(",")
                                 return ins.show_norm(col=col)
                             else:
-                                raise syntaxerror.FormatErr(
-                                    "format: grab from table <name> from database <dbname> col(col1,col)/row(row,row2)")
+                                print(syntaxerror.FormatErr(
+                                    "format: grab from table <name> from database <dbname> col(col1,col)/row(row,row2)"))
                         else:
-                            raise syntaxerror.FormatErr(
-                                "format: grab from table <name> from database <dbname> col(num)/row(num)")
+                            print(syntaxerror.FormatErr(
+                                "format: grab from table <name> from database <dbname> col(num)/row(num)"))
                     else:
-                        raise syntaxerror.FormatErr(
-                            "format: grab from table <name> from database <dbname> col(num)/row(num)")
+                        print(syntaxerror.FormatErr(
+                            "format: grab from table <name> from database <dbname> col(num)/row(num)"))
                 else:
-                    raise syntaxerror.FormatErr(
-                        "format: grab from table <name> from database <dbname> col(num)/row(num)")
+                    print(syntaxerror.FormatErr(
+                        "format: grab from table <name> from database <dbname> col(num)/row(num)"))
             else:
-                raise syntaxerror.FormatErr(
-                    "format: grab from table <name> from database <dbname> col(num)/row(num)")
+                print(syntaxerror.FormatErr(
+                    "format: grab from table <name> from database <dbname> col(num)/row(num)"))
         else:
-            raise syntaxerror.UnknownOperation(f"Operation {argus[0]} is unknown!")
+            print (syntaxerror.UnknownOperation(f"Operation {argus[0]} is unknown!"))
         
 def main():
     print(strawberry_logo)

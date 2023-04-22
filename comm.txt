@@ -1,0 +1,1 @@
+insertinto table table1 in database db1 (id=ree,name=niceguy,cso=True,cos=00.9)

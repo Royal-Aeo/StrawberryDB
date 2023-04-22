@@ -1,0 +1,39 @@
+{main>
+    $hull: {hulltag>
+        primary_key: id,
+        foreign_key: [name;new.berrybase],
+        slices: {"id":char|"name":char|"cso":bool|"cos":decimal}
+    <hulltag};~
+    $mainfruit: {infu>
+        *&res: {$res>
+            id: res,
+            name: Amrut,
+            cso: True,
+            cos: 4.5
+        <$res};
+        *&res3: {$res3>
+            id: res3,
+            name: Super,
+            cso: True,
+            cos: 0.1
+        <$res3};
+        *&rd: {$rd>
+            id: rd,
+            name: Creeper,
+            cso: True,
+            cos: 302.2
+        <$rd};
+        *&ree: {$ree>
+            id: ree,
+            name: niceguy,
+            cso: True,
+            cos: 0.9
+        <$ree};
+        *&rei: {$rei>
+            id: rei,
+            name: niceguy1,
+            cso: True,
+            cos: 00.9
+        <$rei}
+    <infu}
+<main}
